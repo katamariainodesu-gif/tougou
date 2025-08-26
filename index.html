@@ -18,7 +18,6 @@
   button { display: block; width: 100%; max-width: 600px; margin: 20px auto 0 auto; padding: 14px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; user-select: none; transition: background-color 0.3s ease; }
   button:disabled { background-color: #cccccc; cursor: not-allowed; }
   button:hover:not(:disabled) { background-color: #0056b3; color: white; }
-  /* スタッフ選択 */
   .staff-list { display: flex; flex-direction: column; gap: 20px; max-width: 600px; margin: 0 auto; }
   .staff-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 16px; display: flex; gap: 16px; align-items: flex-start; cursor: pointer; }
   .staff-card.selected { border: 2px solid #22c55e; }
@@ -27,7 +26,6 @@
   .nickname { font-weight: bold; font-size: 1.1em; margin-bottom: 6px; }
   .block-label { font-weight: bold; margin-top: 8px; }
   .introduction { font-size: 0.9em; color: #333; }
-  /* カレンダー */
   #calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 20px; }
   .day-name, .day { text-align: center; padding: 6px 0; font-weight: 600; }
   .day-name { background-color: #0c4a6e; color: white; border-radius: 4px; font-size: 14px; }
@@ -44,21 +42,18 @@
 </head>
 <body>
 
-<!-- メニュー選択ページ -->
 <div id="menu-page" class="page active">
   <h2>メニューを選択してください</h2>
   <div id="menu-container">読み込み中...</div>
   <button id="menu-next" disabled>次へ</button>
 </div>
 
-<!-- スタッフ選択ページ -->
 <div id="staff-page" class="page">
   <h2>担当スタッフを選択してください</h2>
   <div id="staff-container" class="staff-list">読み込み中...</div>
   <button id="staff-next" disabled>次へ</button>
 </div>
 
-<!-- カレンダー・日時選択ページ -->
 <div id="calendar-page" class="page">
   <h1>予約したい日時を選択してください</h1>
   <div id="month-navigation">
@@ -80,24 +75,21 @@ const webhookURL = "https://hook.eu2.make.com/g0jzzvagjl1e7cefpn0er1gahsc1pwjo";
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get("userId");
 
-// 選択データを保持
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
-let duration = 30; // 初期値
+let duration = 30;
+let selectedDayDiv = null;
+let reservedSlots = [];
+let startHour=8, startMinute=0, endHour=17, endMinute=0;
 
-// ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
 const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
 
 fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
-.then(res => {
-  if (!res.ok) throw new Error("レスポンスエラー");
-  return res.json();
-})
+.then(res => res.json())
 .then(data => {
-  if (!Array.isArray(data) || data.length === 0) throw new Error("メニューなし");
   menuContainer.innerHTML = "";
   let lastBlock = "";
   data.forEach(item => {
@@ -105,8 +97,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
     const title = item[1]||'';
     const desc = item[2]||'';
     const price = item[5]||'';
-    const menuDuration = item[6] ? parseInt(item[6],10) : 30; // item[6] から施術時間を取得
-
+    const menuDuration = item[6] ? parseInt(item[6],10) : 30;
     if(block!==lastBlock){
       const blockEl = document.createElement("div");
       blockEl.className="block-title";
@@ -114,7 +105,6 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuContainer.appendChild(blockEl);
       lastBlock = block;
     }
-
     const menuEl = document.createElement("div");
     menuEl.className = "menu-item";
     menuEl.innerHTML = `<div class="menu-title">${title}（¥${price}）</div><div class="menu-desc">${desc}</div>`;
@@ -123,13 +113,12 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuEl.classList.add("selected");
       selectedMenuEl = menuEl;
       selectedMenu = { メニュー名:title, 金額:price, duration:menuDuration };
-      duration = menuDuration; // 選択されたメニューの施術時間で上書き
+      duration = menuDuration;
       menuNextBtn.disabled = false;
     });
     menuContainer.appendChild(menuEl);
   });
-})
-.catch(()=>{menuContainer.innerHTML="メニュー取得失敗";});
+});
 
 menuNextBtn.addEventListener("click", () => {
   document.getElementById("menu-page").classList.remove("active");
@@ -137,7 +126,6 @@ menuNextBtn.addEventListener("click", () => {
   loadStaffPage();
 });
 
-// ---------------- スタッフ選択 ----------------
 const staffContainer = document.getElementById("staff-container");
 const staffNextBtn = document.getElementById("staff-next");
 let selectedStaffEl = null;
@@ -145,12 +133,8 @@ let selectedStaffEl = null;
 function loadStaffPage() {
   staffContainer.innerHTML = "読み込み中...";
   fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&kakutei=ssttff`)
-  .then(res => {
-    if (!res.ok) throw new Error("レスポンスエラー");
-    return res.json();
-  })
+  .then(res => res.json())
   .then(data => {
-    if (!Array.isArray(data) || data.length === 0) throw new Error("スタッフなし");
     staffContainer.innerHTML = "";
     data.forEach(staff=>{
       const nickname = staff[2]||"";
@@ -158,7 +142,6 @@ function loadStaffPage() {
       const imageUrl = staff[11]?`https://lh3.googleusercontent.com/d/${staff[11]}`:"";
       const skill = staff[8]||"";
       const fee = staff[9]||"";
-
       const card = document.createElement("div");
       card.className="staff-card";
       card.innerHTML = `
@@ -179,8 +162,7 @@ function loadStaffPage() {
       });
       staffContainer.appendChild(card);
     });
-  })
-  .catch(()=>{staffContainer.innerHTML="スタッフ取得失敗";});
+  });
 }
 
 staffNextBtn.addEventListener("click", () => {
@@ -190,7 +172,6 @@ staffNextBtn.addEventListener("click", () => {
   initializeCalendar();
 });
 
-// ---------------- カレンダー ----------------
 const calendarDiv = document.getElementById("calendar");
 const currentMonthLabel = document.getElementById("current-month-label");
 const prevBtn = document.getElementById("prev-month-btn");
@@ -200,11 +181,8 @@ const slotsContainer = document.getElementById("time-slots-container");
 const selectedInfo = document.getElementById("selected-info");
 const sendBtn = document.getElementById("send-button");
 
-let reservedSlots = [];
-let startHour=8, startMinute=0, endHour=17, endMinute=0;
-let selectedDayDiv = null;
-let displayedYear, displayedMonth;
 const today = new Date();
+let displayedYear, displayedMonth;
 
 function buildCalendar(y,m){ 
   calendarDiv.innerHTML=""; 
@@ -265,14 +243,9 @@ function showTimeSlots(dateStr){
 function initializeCalendar(){
   if(!selectedStaff){ alert("スタッフが選択されていません"); return; }
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
-  // selectedStaff と duration を GET パラメータに追加
   fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}&staff=${encodeURIComponent(selectedStaff)}`)
-  .then(res => {
-    if (!res.ok) throw new Error("レスポンスエラー");
-    return res.json();
-  })
+  .then(res => res.json())
   .then(data=>{
-    if (!Array.isArray(data)) throw new Error("予約データ不正");
     reservedSlots = data.map(d=>({start:d.start,end:d.end}));
     if(data.length>0){
       const first=data[0];
@@ -282,8 +255,7 @@ function initializeCalendar(){
       endMinute=parseInt(first["終了分"]||0,10);
     }
     buildCalendar(displayedYear,displayedMonth);
-  })
-  .catch(()=>{selectedInfo.textContent="予約枠取得失敗";});
+  });
 }
 
 prevBtn.addEventListener("click",()=>{
@@ -295,9 +267,10 @@ nextBtn.addEventListener("click",()=>{
   buildCalendar(displayedYear,displayedMonth);
 });
 
-// ---------------- 送信 ----------------
 sendBtn.addEventListener("click",async()=>{
   if(!userId || !selectedMenu || !selectedStaff || !selectedDateTime){ alert("情報が不足しています"); return; }
+  const selectedStart = new Date(selectedDateTime);
+  const selectedEnd = new Date(selectedStart.getTime() + duration*60000);
   try{
     const res = await fetch(webhookURL,{
       method:"POST",
@@ -307,7 +280,9 @@ sendBtn.addEventListener("click",async()=>{
         message:"確定予約",
         menu:selectedMenu,
         staff:selectedStaff,
-        datetime:selectedDateTime
+        datetime:selectedDateTime,
+        start:selectedStart.toISOString(),
+        end:selectedEnd.toISOString()
       })
     });
     if(!res.ok) throw new Error("送信失敗");
