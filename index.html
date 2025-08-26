@@ -181,7 +181,7 @@
 <script>
 const webhookUrl = "https://hook.eu2.make.com/m8ax699q4dk75uo84j5nrtu3zfm1x1pj";
 const params = new URLSearchParams(window.location.search);
-const userId = params.get("userid");
+const userId = params.get("userId");
 const duration = parseInt(params.get("duration"), 10) || 30;
 
 // 予約データと営業時間
@@ -416,11 +416,11 @@ nextBtn.addEventListener("click", ()=>{
 
 async function initialize(){
   if(!userId){
-    alert("URLにuseridパラメータがありません。");
+    alert("URLにuserIdパラメータがありません。");
     return;
   }
   try{
-    const res = await fetch(`${webhookUrl}?userid=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}`);
+    const res = await fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}`);
     if(!res.ok) throw new Error("予約データ取得に失敗しました");
     const data = await res.json();
 
@@ -446,3 +446,4 @@ initialize();
 
 </body>
 </html>
+
