@@ -127,7 +127,6 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
 })
 .catch(()=>{menuContainer.innerHTML="メニュー取得失敗";});
 
-// メニュー「次へ」
 menuNextBtn.addEventListener("click", () => {
   document.getElementById("menu-page").classList.remove("active");
   document.getElementById("staff-page").classList.add("active");
@@ -181,6 +180,7 @@ function loadStaffPage() {
 }
 
 staffNextBtn.addEventListener("click", () => {
+  if(!selectedStaff){ alert("スタッフを選択してください"); return; }
   document.getElementById("staff-page").classList.remove("active");
   document.getElementById("calendar-page").classList.add("active");
   initializeCalendar();
@@ -201,6 +201,7 @@ let startHour=8, startMinute=0, endHour=17, endMinute=0;
 let selectedDayDiv = null;
 let displayedYear, displayedMonth;
 const today = new Date();
+
 function buildCalendar(y,m){ 
   calendarDiv.innerHTML=""; 
   const dayNames=["日","月","火","水","木","金","土"];
@@ -258,8 +259,10 @@ function showTimeSlots(dateStr){
 }
 
 function initializeCalendar(){
+  if(!selectedStaff){ alert("スタッフが選択されていません"); return; }
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
-  fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}`)
+  // ← 修正：selectedStaff を GET パラメータに追加
+  fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}&staff=${encodeURIComponent(selectedStaff)}`)
   .then(res => {
     if (!res.ok) throw new Error("レスポンスエラー");
     return res.json();
@@ -311,5 +314,3 @@ sendBtn.addEventListener("click",async()=>{
 </script>
 </body>
 </html>
-
-
