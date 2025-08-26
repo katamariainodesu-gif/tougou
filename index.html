@@ -84,7 +84,7 @@ const userId = urlParams.get("userId");
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
-let duration = 30; // デフォルト値
+let duration = 30; // 初期値
 
 // ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
@@ -105,7 +105,8 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
     const title = item[1]||'';
     const desc = item[2]||'';
     const price = item[5]||'';
-    const dur = item[6]||30; // ← 追加：item[6] から施術時間を取得
+    const menuDuration = item[6] ? parseInt(item[6],10) : 30; // item[6] から施術時間を取得
+
     if(block!==lastBlock){
       const blockEl = document.createElement("div");
       blockEl.className="block-title";
@@ -113,6 +114,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuContainer.appendChild(blockEl);
       lastBlock = block;
     }
+
     const menuEl = document.createElement("div");
     menuEl.className = "menu-item";
     menuEl.innerHTML = `<div class="menu-title">${title}（¥${price}）</div><div class="menu-desc">${desc}</div>`;
@@ -120,8 +122,8 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       if(selectedMenuEl) selectedMenuEl.classList.remove("selected");
       menuEl.classList.add("selected");
       selectedMenuEl = menuEl;
-      selectedMenu = { メニュー名:title, 金額:price };
-      duration = parseInt(dur,10); // ← 選択したメニューの施術時間を duration に反映
+      selectedMenu = { メニュー名:title, 金額:price, duration:menuDuration };
+      duration = menuDuration; // 選択されたメニューの施術時間で上書き
       menuNextBtn.disabled = false;
     });
     menuContainer.appendChild(menuEl);
@@ -263,6 +265,7 @@ function showTimeSlots(dateStr){
 function initializeCalendar(){
   if(!selectedStaff){ alert("スタッフが選択されていません"); return; }
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
+  // selectedStaff と duration を GET パラメータに追加
   fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}&staff=${encodeURIComponent(selectedStaff)}`)
   .then(res => {
     if (!res.ok) throw new Error("レスポンスエラー");
@@ -308,9 +311,8 @@ sendBtn.addEventListener("click",async()=>{
       })
     });
     if(!res.ok) throw new Error("送信失敗");
-    alert(`予約が送信されました！\n${selectedDateTime}\nメニュー: ${selectedMenu.メニュー名}\nスタッフ: ${selectedStaff}`);
-    location.reload();
-  }catch(err){ alert(err.message); }
+    alert(`予約が送信されました\n${selectedDateTime} / ${selectedMenu.メニュー名} / ${selectedStaff}`);
+  }catch(e){ alert("送信エラー"); }
 });
 </script>
 </body>
