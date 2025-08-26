@@ -23,7 +23,6 @@
   .staff-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 16px; display: flex; gap: 16px; align-items: flex-start; cursor: pointer; }
   .staff-card.selected { border: 2px solid #22c55e; }
   .staff-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
-  .radio-column { display: flex; align-items: center; }
   .staff-info { flex: 1; }
   .nickname { font-weight: bold; font-size: 1.1em; margin-bottom: 6px; }
   .block-label { font-weight: bold; margin-top: 8px; }
@@ -93,8 +92,12 @@ const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
 
 fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}`)
-.then(res => res.json())
+.then(res => {
+  if (!res.ok) throw new Error("レスポンスエラー");
+  return res.json();
+})
 .then(data => {
+  if (!Array.isArray(data) || data.length === 0) throw new Error("メニューなし");
   menuContainer.innerHTML = "";
   let lastBlock = "";
   data.forEach(item => {
@@ -137,10 +140,15 @@ const staffNextBtn = document.getElementById("staff-next");
 let selectedStaffEl = null;
 
 function loadStaffPage() {
-  staffContainer.innerHTML = "";
+  staffContainer.innerHTML = "読み込み中...";
   fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}&kakutei=ssttff`)
-  .then(res=>res.json())
-  .then(data=>{
+  .then(res => {
+    if (!res.ok) throw new Error("レスポンスエラー");
+    return res.json();
+  })
+  .then(data => {
+    if (!Array.isArray(data) || data.length === 0) throw new Error("スタッフなし");
+    staffContainer.innerHTML = "";
     data.forEach(staff=>{
       const nickname = staff[2]||"";
       const intro = staff[6]||"";
@@ -168,7 +176,8 @@ function loadStaffPage() {
       });
       staffContainer.appendChild(card);
     });
-  });
+  })
+  .catch(()=>{staffContainer.innerHTML="スタッフ取得失敗";});
 }
 
 staffNextBtn.addEventListener("click", () => {
@@ -251,8 +260,12 @@ function showTimeSlots(dateStr){
 function initializeCalendar(){
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
   fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}&duration=${encodeURIComponent(duration)}`)
-  .then(res=>res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("レスポンスエラー");
+    return res.json();
+  })
   .then(data=>{
+    if (!Array.isArray(data)) throw new Error("予約データ不正");
     reservedSlots = data.map(d=>({start:d.start,end:d.end}));
     if(data.length>0){
       const first=data[0];
@@ -262,7 +275,8 @@ function initializeCalendar(){
       endMinute=parseInt(first["終了分"]||0,10);
     }
     buildCalendar(displayedYear,displayedMonth);
-  });
+  })
+  .catch(()=>{selectedInfo.textContent="予約枠取得失敗";});
 }
 
 prevBtn.addEventListener("click",()=>{
@@ -297,4 +311,3 @@ sendBtn.addEventListener("click",async()=>{
 </script>
 </body>
 </html>
-
