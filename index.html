@@ -78,7 +78,7 @@
 <script>
 const webhookURL = "https://hook.eu2.make.com/o9ge969hg9kpsovxgtbebwr1igswrin7";
 const urlParams = new URLSearchParams(window.location.search);
-const userid = urlParams.get("userid");
+const userId = urlParams.get("userId");
 
 // 選択データを保持
 let selectedMenu = null;
@@ -91,7 +91,7 @@ const menuContainer = document.getElementById("menu-container");
 const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
 
-fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}`)
+fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
 .then(res => {
   if (!res.ok) throw new Error("レスポンスエラー");
   return res.json();
@@ -141,7 +141,7 @@ let selectedStaffEl = null;
 
 function loadStaffPage() {
   staffContainer.innerHTML = "読み込み中...";
-  fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}&kakutei=ssttff`)
+  fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&kakutei=ssttff`)
   .then(res => {
     if (!res.ok) throw new Error("レスポンスエラー");
     return res.json();
@@ -259,7 +259,7 @@ function showTimeSlots(dateStr){
 
 function initializeCalendar(){
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
-  fetch(`${webhookURL}?userid=${encodeURIComponent(userid)}&duration=${encodeURIComponent(duration)}`)
+  fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}`)
   .then(res => {
     if (!res.ok) throw new Error("レスポンスエラー");
     return res.json();
@@ -290,13 +290,13 @@ nextBtn.addEventListener("click",()=>{
 
 // ---------------- 送信 ----------------
 sendBtn.addEventListener("click",async()=>{
-  if(!userid || !selectedMenu || !selectedStaff || !selectedDateTime){ alert("情報が不足しています"); return; }
+  if(!userId || !selectedMenu || !selectedStaff || !selectedDateTime){ alert("情報が不足しています"); return; }
   try{
     const res = await fetch(webhookURL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
-        userId:userid,
+        userId:userId,
         message:"確定予約",
         menu:selectedMenu,
         staff:selectedStaff,
