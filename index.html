@@ -84,7 +84,7 @@ const userId = urlParams.get("userId");
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
-let duration = 30;
+let duration = 30; // デフォルト値
 
 // ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
@@ -105,6 +105,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
     const title = item[1]||'';
     const desc = item[2]||'';
     const price = item[5]||'';
+    const dur = item[6]||30; // ← 追加：item[6] から施術時間を取得
     if(block!==lastBlock){
       const blockEl = document.createElement("div");
       blockEl.className="block-title";
@@ -120,6 +121,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuEl.classList.add("selected");
       selectedMenuEl = menuEl;
       selectedMenu = { メニュー名:title, 金額:price };
+      duration = parseInt(dur,10); // ← 選択したメニューの施術時間を duration に反映
       menuNextBtn.disabled = false;
     });
     menuContainer.appendChild(menuEl);
@@ -261,7 +263,6 @@ function showTimeSlots(dateStr){
 function initializeCalendar(){
   if(!selectedStaff){ alert("スタッフが選択されていません"); return; }
   displayedYear = today.getFullYear(); displayedMonth = today.getMonth();
-  // ← 修正：selectedStaff を GET パラメータに追加
   fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}&duration=${encodeURIComponent(duration)}&staff=${encodeURIComponent(selectedStaff)}`)
   .then(res => {
     if (!res.ok) throw new Error("レスポンスエラー");
