@@ -40,6 +40,10 @@
   .time-slot.selected { background-color: #16a34a; border-color: #15803d; color: white; box-shadow: none; }
   .time-slot.unavailable { background-color: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none; }
   #selected-info { margin-top: 20px; font-weight: 700; font-size: 16px; text-align: center; color: #166534; }
+  /* 完了ページ */
+  #complete-page { display: none; text-align: center; padding: 40px 20px; }
+  #complete-page h1 { font-size: 22px; color: #166534; margin-bottom: 20px; }
+  #complete-page p { font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 30px; }
 </style>
 </head>
 <body>
@@ -73,6 +77,12 @@
   </div>
   <div id="selected-info">カレンダーを開き、時間を選択してください</div>
   <button id="send-button" disabled>予約を送信する</button>
+</div>
+
+<!-- 完了ページ -->
+<div id="complete-page" class="page">
+  <h1>予約送信が完了しました</h1>
+  <p>右上の × ボタンを押してページを閉じてください。</p>
 </div>
 
 <script>
@@ -307,8 +317,12 @@ sendBtn.addEventListener("click",async()=>{
         Method:"POST"
       })
     });
-    if(res.ok) alert("予約送信成功");
-    else alert("送信失敗");
+    if(res.ok){
+      document.getElementById("calendar-page").classList.remove("active");
+      document.getElementById("complete-page").classList.add("active");
+    } else {
+      alert("送信失敗");
+    }
   }catch(e){ console.error(e); alert("送信エラー"); }
 });
 </script>
