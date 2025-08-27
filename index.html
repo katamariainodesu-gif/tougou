@@ -38,8 +38,8 @@
   .time-slot.selected { background-color: #16a34a; border-color: #15803d; color: white; box-shadow: none; }
   .time-slot.unavailable { background-color: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none; }
   #selected-info { margin-top: 20px; font-weight: 700; font-size: 16px; text-align: center; color: #166534; }
-  /* 完了ページ */
-  #completion-page { display: none; text-align: center; margin-top: 50px; font-size: 20px; color: #22c55e; }
+  /* 完了画面 */
+  #completion-page { display: none; min-height: 200px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 24px; color: #16a34a; }
 </style>
 </head>
 <body>
@@ -76,16 +76,14 @@
 </div>
 
 <!-- 完了ページ -->
-<div id="completion-page" class="page">
-  <h1>予約が完了しました</h1>
-  <p>ご予約ありがとうございます。</p>
-</div>
+<div id="completion-page">予約が完了しました！</div>
 
 <script>
 const webhookURL = "https://hook.eu2.make.com/g0jzzvagjl1e7cefpn0er1gahsc1pwjo";
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get("userId");
 
+// 選択データを保持
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
@@ -93,6 +91,7 @@ let selectedStart = null;
 let selectedEnd = null;
 let duration = 30;
 
+// ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
 const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
@@ -108,7 +107,6 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
     const desc = item[2]||'';
     const price = item[5]||'';
     const menuDuration = item[6] ? parseInt(item[6],10) : 30;
-
     if(block!==lastBlock){
       const blockEl = document.createElement("div");
       blockEl.className="block-title";
@@ -116,7 +114,6 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuContainer.appendChild(blockEl);
       lastBlock = block;
     }
-
     const menuEl = document.createElement("div");
     menuEl.className = "menu-item";
     menuEl.innerHTML = `<div class="menu-title">${title}（¥${price}）</div><div class="menu-desc">${desc}</div>`;
@@ -139,6 +136,7 @@ menuNextBtn.addEventListener("click", () => {
   loadStaffPage();
 });
 
+// ---------------- スタッフ選択 ----------------
 const staffContainer = document.getElementById("staff-container");
 const staffNextBtn = document.getElementById("staff-next");
 let selectedStaffEl = null;
@@ -155,7 +153,6 @@ function loadStaffPage() {
       const imageUrl = staff[11]?`https://lh3.googleusercontent.com/d/${staff[11]}`:"";
       const skill = staff[8]||"";
       const fee = staff[9]||"";
-
       const card = document.createElement("div");
       card.className="staff-card";
       card.innerHTML = `
@@ -187,6 +184,7 @@ staffNextBtn.addEventListener("click", () => {
   initializeCalendar();
 });
 
+// ---------------- カレンダー ----------------
 const calendarDiv = document.getElementById("calendar");
 const currentMonthLabel = document.getElementById("current-month-label");
 const prevBtn = document.getElementById("prev-month-btn");
@@ -205,23 +203,12 @@ const today = new Date();
 function buildCalendar(y,m){ 
   calendarDiv.innerHTML=""; 
   const dayNames=["日","月","火","水","木","金","土"];
-  dayNames.forEach(dn=>{
-    const dnElem=document.createElement("div");
-    dnElem.className="day-name";
-    dnElem.textContent=dn;
-    calendarDiv.appendChild(dnElem);
-  });
+  dayNames.forEach(dn=>{const dnElem=document.createElement("div"); dnElem.className="day-name"; dnElem.textContent=dn; calendarDiv.appendChild(dnElem);});
   const firstDay=new Date(y,m,1), lastDay=new Date(y,m+1,0);
   const firstWeekDay=firstDay.getDay(), daysInMonth=lastDay.getDate();
-  for(let i=0;i<firstWeekDay;i++){
-    const emptyDiv=document.createElement("div");
-    emptyDiv.className="day inactive";
-    calendarDiv.appendChild(emptyDiv);
-  }
+  for(let i=0;i<firstWeekDay;i++){ const emptyDiv=document.createElement("div"); emptyDiv.className="day inactive"; calendarDiv.appendChild(emptyDiv);}
   for(let d=1;d<=daysInMonth;d++){
-    const dayDiv=document.createElement("div");
-    dayDiv.className="day";
-    dayDiv.textContent=d;
+    const dayDiv=document.createElement("div"); dayDiv.className="day"; dayDiv.textContent=d;
     const dayDate = new Date(y,m,d);
     const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     if(dayDate<todayDateOnly) dayDiv.classList.add("inactive");
@@ -250,10 +237,7 @@ function showTimeSlots(dateStr){
   let selectedTimeDiv = null;
   while(current<end){
     const slotEnd = new Date(current.getTime()+duration*60000);
-    const isReserved = reservedForDay.some(slot=>{
-      const s=new Date(slot.start),e=new Date(slot.end);
-      return !(slotEnd<=s||current>=e);
-    });
+    const isReserved = reservedForDay.some(slot=>{ const s=new Date(slot.start),e=new Date(slot.end); return !(slotEnd<=s||current>=e); });
     const timeDiv=document.createElement("div"); timeDiv.className="time-slot"; 
     if(isReserved) timeDiv.classList.add("unavailable");
     const hh=String(current.getHours()).padStart(2,"0"), mm=String(current.getMinutes()).padStart(2,"0");
@@ -301,30 +285,33 @@ nextBtn.addEventListener("click",()=>{
 });
 
 // ---------------- 送信 ----------------
-sendBtn.addEventListener("click",()=>{
-  // 完了画面に切り替え
-  document.getElementById("calendar-page").classList.remove("active");
-  document.getElementById("completion-page").classList.add("active");
-
-  // バックグラウンドで送信
-  if(userId && selectedMenu && selectedStaff && selectedDateTime && selectedStart && selectedEnd){
-    fetch(webhookURL, {
+const completionPage = document.getElementById("completion-page");
+sendBtn.addEventListener("click", async()=>{
+  sendBtn.disabled = true;
+  // 少し待ってから完了画面表示
+  setTimeout(()=> {
+    document.getElementById("calendar-page").classList.remove("active");
+    completionPage.style.display = "flex";
+  }, 200);
+  
+  if(!userId || !selectedMenu || !selectedStaff || !selectedDateTime || !selectedStart || !selectedEnd){
+    console.warn("情報不足"); 
+    return;
+  }
+  try{
+    await fetch(webhookURL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
+      body: JSON.stringify({
         userId:userId,
-        message:"確定予約",
         menu:selectedMenu,
         staff:selectedStaff,
-        datetime:selectedDateTime,
         start:selectedStart.toISOString(),
-        end:selectedEnd.toISOString(),
-        duration:duration
+        end:selectedEnd.toISOString()
       })
-    }).catch(e => console.error("送信エラー", e));
-  }
+    });
+  }catch(e){ console.error(e);}
 });
 </script>
-
 </body>
 </html>
