@@ -38,8 +38,21 @@
   .time-slot.selected { background-color: #16a34a; border-color: #15803d; color: white; box-shadow: none; }
   .time-slot.unavailable { background-color: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none; }
   #selected-info { margin-top: 20px; font-weight: 700; font-size: 16px; text-align: center; color: #166534; }
+
   /* 完了画面 */
-  #completion-page { display: none; min-height: 200px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 24px; color: #16a34a; }
+  #completion-page {
+    display: none;
+    height: 100vh;
+    background-color: #f9f9f9;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 24px;
+    color: #16a34a;
+    padding: 20px;
+    box-sizing: border-box;
+  }
 </style>
 </head>
 <body>
@@ -75,15 +88,17 @@
   <button id="send-button" disabled>予約を送信する</button>
 </div>
 
-<!-- 完了ページ -->
-<div id="completion-page">予約が完了しました！</div>
+<!-- 完了画面 -->
+<div id="completion-page">
+  予約が完了しました！<br>ご来店をお待ちしております。
+</div>
 
 <script>
 const webhookURL = "https://hook.eu2.make.com/g0jzzvagjl1e7cefpn0er1gahsc1pwjo";
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get("userId");
 
-// 選択データを保持
+// 選択データ
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
@@ -91,7 +106,7 @@ let selectedStart = null;
 let selectedEnd = null;
 let duration = 30;
 
-// ---------------- メニュー選択 ----------------
+// ---------------- メニュー ----------------
 const menuContainer = document.getElementById("menu-container");
 const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
@@ -107,6 +122,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
     const desc = item[2]||'';
     const price = item[5]||'';
     const menuDuration = item[6] ? parseInt(item[6],10) : 30;
+
     if(block!==lastBlock){
       const blockEl = document.createElement("div");
       blockEl.className="block-title";
@@ -114,6 +130,7 @@ fetch(`${webhookURL}?userId=${encodeURIComponent(userId)}`)
       menuContainer.appendChild(blockEl);
       lastBlock = block;
     }
+
     const menuEl = document.createElement("div");
     menuEl.className = "menu-item";
     menuEl.innerHTML = `<div class="menu-title">${title}（¥${price}）</div><div class="menu-desc">${desc}</div>`;
@@ -136,7 +153,7 @@ menuNextBtn.addEventListener("click", () => {
   loadStaffPage();
 });
 
-// ---------------- スタッフ選択 ----------------
+// ---------------- スタッフ ----------------
 const staffContainer = document.getElementById("staff-container");
 const staffNextBtn = document.getElementById("staff-next");
 let selectedStaffEl = null;
@@ -153,6 +170,7 @@ function loadStaffPage() {
       const imageUrl = staff[11]?`https://lh3.googleusercontent.com/d/${staff[11]}`:"";
       const skill = staff[8]||"";
       const fee = staff[9]||"";
+
       const card = document.createElement("div");
       card.className="staff-card";
       card.innerHTML = `
@@ -193,6 +211,7 @@ const timesList = document.getElementById("times-list");
 const slotsContainer = document.getElementById("time-slots-container");
 const selectedInfo = document.getElementById("selected-info");
 const sendBtn = document.getElementById("send-button");
+const completionPage = document.getElementById("completion-page");
 
 let reservedSlots = [];
 let startHour=8, startMinute=0, endHour=17, endMinute=0;
@@ -275,43 +294,40 @@ function initializeCalendar(){
   .catch(()=>{selectedInfo.textContent="予約枠取得失敗";});
 }
 
-prevBtn.addEventListener("click",()=>{
-  if(displayedMonth===0){ displayedMonth=11; displayedYear--; } else displayedMonth--;
-  buildCalendar(displayedYear,displayedMonth);
-});
-nextBtn.addEventListener("click",()=>{
-  if(displayedMonth===11){ displayedMonth=0; displayedYear++; } else displayedMonth++;
-  buildCalendar(displayedYear,displayedMonth);
-});
+prevBtn.addEventListener("click",()=>{if(displayedMonth===0){ displayedMonth=11; displayedYear--; } else displayedMonth--; buildCalendar(displayedYear,displayedMonth);});
+nextBtn.addEventListener("click",()=>{if(displayedMonth===11){ displayedMonth=0; displayedYear++; } else displayedMonth++; buildCalendar(displayedYear,displayedMonth);});
 
 // ---------------- 送信 ----------------
-const completionPage = document.getElementById("completion-page");
-sendBtn.addEventListener("click", async()=>{
-  sendBtn.disabled = true;
-  // 少し待ってから完了画面表示
-  setTimeout(()=> {
-    document.getElementById("calendar-page").classList.remove("active");
-    completionPage.style.display = "flex";
-  }, 200);
-  
+sendBtn.addEventListener("click",async()=>{
   if(!userId || !selectedMenu || !selectedStaff || !selectedDateTime || !selectedStart || !selectedEnd){
-    console.warn("情報不足"); 
-    return;
+    alert("情報が不足しています"); return;
   }
   try{
     await fetch(webhookURL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
+      body:JSON.stringify({
         userId:userId,
+        message:"確定予約",
         menu:selectedMenu,
         staff:selectedStaff,
+        datetime:selectedDateTime,
         start:selectedStart.toISOString(),
-        end:selectedEnd.toISOString()
+        end:selectedEnd.toISOString(),
+        duration:duration,
+        Method:"POST"
       })
     });
-  }catch(e){ console.error(e);}
+  }catch(e){ console.error(e); }
+
+  // 0.5秒後に完了画面表示
+  setTimeout(()=>{
+    document.getElementById("calendar-page").classList.remove("active");
+    completionPage.style.height = window.innerHeight + "px";
+    completionPage.style.display = "flex";
+  }, 500);
 });
 </script>
+
 </body>
 </html>
