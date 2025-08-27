@@ -40,6 +40,9 @@
   .time-slot.selected { background-color: #16a34a; border-color: #15803d; color: white; box-shadow: none; }
   .time-slot.unavailable { background-color: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none; }
   #selected-info { margin-top: 20px; font-weight: 700; font-size: 16px; text-align: center; color: #166534; }
+  /* 完了ページ */
+  #completion-page { display: none; text-align: center; padding-top: 100px; }
+  #completion-page h1 { color: #22c55e; }
 </style>
 </head>
 <body>
@@ -75,18 +78,23 @@
   <button id="send-button" disabled>予約を送信する</button>
 </div>
 
+<!-- 完了ページ -->
+<div id="completion-page" class="page">
+  <h1>予約が完了しました！</h1>
+  <p>ご予約ありがとうございます。</p>
+</div>
+
 <script>
 const webhookURL = "https://hook.eu2.make.com/g0jzzvagjl1e7cefpn0er1gahsc1pwjo";
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get("userId");
 
-// 選択データを保持
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
 let selectedStart = null;
 let selectedEnd = null;
-let duration = 30; // 初期値
+let duration = 30;
 
 // ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
@@ -292,7 +300,7 @@ sendBtn.addEventListener("click",async()=>{
     alert("情報が不足しています"); return;
   }
   try{
-    const res = await fetch(webhookURL,{
+    await fetch(webhookURL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
@@ -307,8 +315,9 @@ sendBtn.addEventListener("click",async()=>{
         Method:"POST"
       })
     });
-    if(res.ok) alert("予約送信成功");
-    else alert("送信失敗");
+    // 完了画面に切り替え
+    document.getElementById("calendar-page").classList.remove("active");
+    document.getElementById("completion-page").classList.add("active");
   }catch(e){ console.error(e); alert("送信エラー"); }
 });
 </script>
