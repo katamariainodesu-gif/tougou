@@ -18,6 +18,7 @@
   button { display: block; width: 100%; max-width: 600px; margin: 20px auto 0 auto; padding: 14px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; user-select: none; transition: background-color 0.3s ease; }
   button:disabled { background-color: #cccccc; cursor: not-allowed; }
   button:hover:not(:disabled) { background-color: #0056b3; color: white; }
+  /* スタッフ選択 */
   .staff-list { display: flex; flex-direction: column; gap: 20px; max-width: 600px; margin: 0 auto; }
   .staff-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 16px; display: flex; gap: 16px; align-items: flex-start; cursor: pointer; }
   .staff-card.selected { border: 2px solid #22c55e; }
@@ -26,6 +27,7 @@
   .nickname { font-weight: bold; font-size: 1.1em; margin-bottom: 6px; }
   .block-label { font-weight: bold; margin-top: 8px; }
   .introduction { font-size: 0.9em; color: #333; }
+  /* カレンダー */
   #calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 20px; }
   .day-name, .day { text-align: center; padding: 6px 0; font-weight: 600; }
   .day-name { background-color: #0c4a6e; color: white; border-radius: 4px; font-size: 14px; }
@@ -38,23 +40,25 @@
   .time-slot.selected { background-color: #16a34a; border-color: #15803d; color: white; box-shadow: none; }
   .time-slot.unavailable { background-color: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none; }
   #selected-info { margin-top: 20px; font-weight: 700; font-size: 16px; text-align: center; color: #166534; }
-  #completion-page { display: none; padding: 20px; background-color: #fefefe; border-radius: 12px; max-width: 700px; margin: 40px auto; text-align: center; font-size: 18px; color: #0f172a; line-height: 1.6; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 </style>
 </head>
 <body>
 
+<!-- メニュー選択ページ -->
 <div id="menu-page" class="page active">
   <h2>メニューを選択してください</h2>
   <div id="menu-container">読み込み中...</div>
   <button id="menu-next" disabled>次へ</button>
 </div>
 
+<!-- スタッフ選択ページ -->
 <div id="staff-page" class="page">
   <h2>担当スタッフを選択してください</h2>
   <div id="staff-container" class="staff-list">読み込み中...</div>
   <button id="staff-next" disabled>次へ</button>
 </div>
 
+<!-- カレンダー・日時選択ページ -->
 <div id="calendar-page" class="page">
   <h1>予約したい日時を選択してください</h1>
   <div id="month-navigation">
@@ -71,22 +75,20 @@
   <button id="send-button" disabled>予約を送信する</button>
 </div>
 
-<div id="completion-page">
-  予約送信が完了しましたので、右上の×ボタンを押してページを閉じてください。
-</div>
-
 <script>
 const webhookURL = "https://hook.eu2.make.com/g0jzzvagjl1e7cefpn0er1gahsc1pwjo";
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get("userId");
 
+// 選択データを保持
 let selectedMenu = null;
 let selectedStaff = null;
 let selectedDateTime = null;
 let selectedStart = null;
 let selectedEnd = null;
-let duration = 30;
+let duration = 30; // 初期値
 
+// ---------------- メニュー選択 ----------------
 const menuContainer = document.getElementById("menu-container");
 const menuNextBtn = document.getElementById("menu-next");
 let selectedMenuEl = null;
@@ -133,6 +135,7 @@ menuNextBtn.addEventListener("click", () => {
   loadStaffPage();
 });
 
+// ---------------- スタッフ選択 ----------------
 const staffContainer = document.getElementById("staff-container");
 const staffNextBtn = document.getElementById("staff-next");
 let selectedStaffEl = null;
@@ -181,6 +184,7 @@ staffNextBtn.addEventListener("click", () => {
   initializeCalendar();
 });
 
+// ---------------- カレンダー ----------------
 const calendarDiv = document.getElementById("calendar");
 const currentMonthLabel = document.getElementById("current-month-label");
 const prevBtn = document.getElementById("prev-month-btn");
@@ -200,22 +204,13 @@ function buildCalendar(y,m){
   calendarDiv.innerHTML=""; 
   const dayNames=["日","月","火","水","木","金","土"];
   dayNames.forEach(dn=>{
-    const dnElem=document.createElement("div"); 
-    dnElem.className="day-name"; 
-    dnElem.textContent=dn; 
-    calendarDiv.appendChild(dnElem);
+    const dnElem=document.createElement("div"); dnElem.className="day-name"; dnElem.textContent=dn; calendarDiv.appendChild(dnElem);
   });
   const firstDay=new Date(y,m,1), lastDay=new Date(y,m+1,0);
   const firstWeekDay=firstDay.getDay(), daysInMonth=lastDay.getDate();
-  for(let i=0;i<firstWeekDay;i++){ 
-    const emptyDiv=document.createElement("div"); 
-    emptyDiv.className="day inactive"; 
-    calendarDiv.appendChild(emptyDiv);
-  }
+  for(let i=0;i<firstWeekDay;i++){ const emptyDiv=document.createElement("div"); emptyDiv.className="day inactive"; calendarDiv.appendChild(emptyDiv);}
   for(let d=1;d<=daysInMonth;d++){
-    const dayDiv=document.createElement("div"); 
-    dayDiv.className="day"; 
-    dayDiv.textContent=d;
+    const dayDiv=document.createElement("div"); dayDiv.className="day"; dayDiv.textContent=d;
     const dayDate = new Date(y,m,d);
     const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     if(dayDate<todayDateOnly) dayDiv.classList.add("inactive");
@@ -224,11 +219,8 @@ function buildCalendar(y,m){
     calendarDiv.appendChild(dayDiv);
   }
   currentMonthLabel.textContent=`${y}年${m+1}月`;
-  if(selectedDayDiv) selectedDayDiv.classList.remove("selected"); 
-  selectedDayDiv=null;
-  timesList.style.display="none"; 
-  selectedInfo.textContent="予約したい日時を選択してください"; 
-  sendBtn.disabled=true;
+  if(selectedDayDiv) selectedDayDiv.classList.remove("selected"); selectedDayDiv=null;
+  timesList.style.display="none"; selectedInfo.textContent="予約したい日時を選択してください"; sendBtn.disabled=true;
 }
 
 function onDateSelected(dayDiv){
@@ -239,10 +231,7 @@ function onDateSelected(dayDiv){
 }
 
 function showTimeSlots(dateStr){
-  slotsContainer.innerHTML=""; 
-  timesList.style.display="block"; 
-  selectedInfo.textContent="時間を選択してください"; 
-  sendBtn.disabled=true;
+  slotsContainer.innerHTML=""; timesList.style.display="block"; selectedInfo.textContent="時間を選択してください"; sendBtn.disabled=true;
   const baseDate = new Date(dateStr+"T00:00:00+09:00");
   let current = new Date(baseDate); current.setHours(startHour,startMinute,0,0);
   const end = new Date(baseDate); end.setHours(endHour,endMinute,0,0);
@@ -250,12 +239,8 @@ function showTimeSlots(dateStr){
   let selectedTimeDiv = null;
   while(current<end){
     const slotEnd = new Date(current.getTime()+duration*60000);
-    const isReserved = reservedForDay.some(slot=>{
-      const s=new Date(slot.start),e=new Date(slot.end); 
-      return !(slotEnd<=s||current>=e); 
-    });
-    const timeDiv=document.createElement("div"); 
-    timeDiv.className="time-slot"; 
+    const isReserved = reservedForDay.some(slot=>{ const s=new Date(slot.start),e=new Date(slot.end); return !(slotEnd<=s||current>=e); });
+    const timeDiv=document.createElement("div"); timeDiv.className="time-slot"; 
     if(isReserved) timeDiv.classList.add("unavailable");
     const hh=String(current.getHours()).padStart(2,"0"), mm=String(current.getMinutes()).padStart(2,"0");
     timeDiv.textContent=`${hh}:${mm}`;
@@ -301,6 +286,7 @@ nextBtn.addEventListener("click",()=>{
   buildCalendar(displayedYear,displayedMonth);
 });
 
+// ---------------- 送信 ----------------
 sendBtn.addEventListener("click",async()=>{
   if(!userId || !selectedMenu || !selectedStaff || !selectedDateTime || !selectedStart || !selectedEnd){
     alert("情報が不足しています"); return;
@@ -314,16 +300,18 @@ sendBtn.addEventListener("click",async()=>{
         message:"確定予約",
         menu:selectedMenu,
         staff:selectedStaff,
-        start:selectedStart,
-        end:selectedEnd
+        datetime:selectedDateTime,
+        start:selectedStart.toISOString(),
+        end:selectedEnd.toISOString(),
+        duration:duration,
+        Method:"POST"
       })
     });
-    if(res.ok){
-      document.getElementById("calendar-page").classList.remove("active");
-      document.getElementById("completion-page").style.display="block";
-    } else { alert("送信失敗"); }
-  } catch(e){ alert("送信失敗"); }
+    if(res.ok) alert("予約送信成功");
+    else alert("送信失敗");
+  }catch(e){ console.error(e); alert("送信エラー"); }
 });
 </script>
+
 </body>
 </html>
